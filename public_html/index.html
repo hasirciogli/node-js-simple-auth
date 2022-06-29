@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        body{
+            padding: 0;
+            margin: 0;
+        }
+
+        .login-form{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            margin: auto;
+            width: 300px;
+            height: 200px;
+            background-color: red;
+            position: relative;
+
+            border-radius: 10px;
+
+            top: calc(100vh / 2 - 200px / 2);
+        }
+
+        .input{
+            width: 250px;
+            padding: 10px 5px;
+            border: 0;
+            margin: 5px 0px;
+        }
+
+        .inputBTN{
+            width: 260px;
+            padding: 10px 5px;
+            margin: 5px 0px;
+        }
+
+        .base-site{
+            display: none;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>   
+        //$('.login-form').prop("display","none");
+
+        function setCookie(cname, cvalue, exdays) {
+            const d = new Date();
+            d.setTime(d.getTime() + (exdays*24*60*60*1000));
+            let expires = "expires="+ d.toUTCString();
+            document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+        }
+
+        function getCookie(cname) {
+            let name = cname + "=";
+            let decodedCookie = decodeURIComponent(document.cookie);
+            let ca = decodedCookie.split(';');
+            for(let i = 0; i <ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) == 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return "";
+        }
+        
+        var socket = io();
+        socket.on("auth_login_success", (token) => {
+            console.log("Login success TOKEN a recieved -> " + token);
+            setCookie("token", token, 365);
+            $('#sign').prop("disabled", true);
+            $('.login-form').fadeOut(100);
+            $('.base-site').fadeIn(1000);
+        });
+
+        socket.on("auth_login_err", (message) => {
+            alert("Login error -> " + message);
+            $('#sign').prop("disabled", true);
+            $('#sign').prop("value", "5");
+
+            setTimeout(() => {
+                $('#sign').prop("value", "4");
+            }, 1000);
+
+            setTimeout(() => {
+                $('#sign').prop("value", "3");
+            }, 2000);
+
+            setTimeout(() => {
+                $('#sign').prop("value", "2");
+            }, 3000);
+
+            setTimeout(() => {
+                $('#sign').prop("value", "1");
+            }, 4000);
+
+            setTimeout(() => {
+                $('#sign').prop("value", "sign in");
+                $('#sign').prop("disabled", false);
+            }, 5000);
+
+        });
+
+
+        
+    </script>
+</head>
+<body>
+
+    <div class="login-form">
+        LOGIN
+        <input class="input" id="username" type="text">
+        <input class="input" id="password" type="password">
+        <input class="inputBTN" id="sign" type="button" value="sign in">
+    </div>
+
+    <div class="base-site">
+        <input type="button" id="exit" value="exit">
+        asda6s5d6
+    </div>
+    
+
+    <script>
+        $('.login-form').css("display", "none");
+
+        var token = getCookie("token");
+        if(token != null && token != "")
+        {
+            //$('#sign').prop("disabled", true);
+            //var loginForm = $('.login-form').fadeOut(100);
+            socket.emit("auth_token_login", token);
+
+            socket.on("auth_token_login_response", (valid, username) => {
+                if(valid){
+                console.log("breakpoint");
+                    $('.login-form').fadeOut(50);
+                    $('.base-site').fadeIn(600);
+
+                    $('#exit').click(() => {
+                        setCookie("token", null, 0);
+                        document.cookie = "";
+                        $('.base-site').fadeOut(5);
+                        $('.login-form').fadeIn(1500);
+                        $('#sign').prop("disabled", false);
+                    });
+                }
+                else{
+                    var loginForm = $('.login-form').fadeIn(100);
+                    $('#sign').prop("disabled", false);
+                }
+            });
+        }
+        else{
+
+            $('.login-form').css("display", "flex");
+            
+            $(document).ready(() => {
+                $('.login-form').fadeIn(500);
+
+                
+            })
+        }
+
+        $('#sign').click(() => {
+            var username = $('#username').val();
+            var password = $('#password').val();
+
+            socket.emit("auth_login", username, password);
+        });
+
+    </script>
+</body>
+</html>
